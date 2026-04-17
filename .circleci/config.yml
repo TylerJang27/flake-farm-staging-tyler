@@ -32,8 +32,6 @@ jobs:
             #   | tar -xz
             # chmod +x ./trunk-analytics-cli
 
-https://github.com/trunk-io/analytics-cli/releases/download/0.12.4-beta.1/check-codeowners-aarch64-apple-darwin.tar.gz
-
             curl -fsSL --retry 3 \
               "https://github.com/trunk-io/analytics-cli/releases/<<parameters.cli_version>>/download/<< parameters.cli_sku >>" \
               | tar -xz
