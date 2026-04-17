@@ -4,6 +4,14 @@ version: 2.1
 # Runs pytest + robotframework, uploads results to Trunk, stores JUnit XMLs.
 
 jobs:
+  hello_world:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - run:
+          name: Hello World
+          command: echo "Hello, World!"
+
   python_test:
     parameters:
       variant:
@@ -97,6 +105,7 @@ jobs:
 workflows:
   test:
     jobs:
+      - hello_world
       - python_test:
           matrix:
             parameters:
