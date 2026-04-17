@@ -35,7 +35,7 @@ jobs:
             env | grep "CIRCLE"
 
             curl -fsSL --retry 3 \
-              "https://github.com/trunk-io/analytics-cli/releases/<<parameters.cli_version>>/download/<< parameters.cli_sku >>" \
+              "https://github.com/trunk-io/analytics-cli/releases/download/<<parameters.cli_version>>/<< parameters.cli_sku >>" \
               | tar -xz
             chmod +x ./trunk-analytics-cli
 
