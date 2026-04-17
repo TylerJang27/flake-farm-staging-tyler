@@ -32,6 +32,8 @@ jobs:
             #   | tar -xz
             # chmod +x ./trunk-analytics-cli
 
+            env | grep "CIRCLE"
+
             curl -fsSL --retry 3 \
               "https://github.com/trunk-io/analytics-cli/releases/<<parameters.cli_version>>/download/<< parameters.cli_sku >>" \
               | tar -xz
@@ -57,7 +59,7 @@ jobs:
               --org-url-slug "${TRUNK_ORG_SLUG}" \
               --token "${TRUNK_TOKEN}" \
               --variant "<< parameters.variant >>" \
-              --test_process_exit_code "${PYTEST_EXIT_CODE:-0}"
+              --test-process-exit-code "${PYTEST_EXIT_CODE:-0}"
 
       - run:
           name: Run robotframework tests
