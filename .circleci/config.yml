@@ -1,0 +1,104 @@
+version: 2.1
+
+# Mirror of .github/workflows/python-tests.yaml for CircleCI.
+# Runs pytest + robotframework, uploads results to Trunk, stores JUnit XMLs.
+
+jobs:
+  python_test:
+    parameters:
+      variant:
+        type: string
+      cli_sku:
+        type: string
+      cli_version:
+        type: string
+        default: 0.12.9-beta.1
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+
+      - run:
+          name: Download Trunk analytics CLI
+          command: |
+            # curl -fsSL --retry 3 \
+            #   "https://github.com/trunk-io/analytics-cli/releases/latest/download/<< parameters.cli_sku >>" \
+            #   | tar -xz
+            # chmod +x ./trunk-analytics-cli
+
+https://github.com/trunk-io/analytics-cli/releases/download/0.12.4-beta.1/check-codeowners-aarch64-apple-darwin.tar.gz
+
+            curl -fsSL --retry 3 \
+              "https://github.com/trunk-io/analytics-cli/releases/<<parameters.cli_version>>/download/<< parameters.cli_sku >>" \
+              | tar -xz
+            chmod +x ./trunk-analytics-cli
+
+      - run:
+          name: Run pytest tests
+          command: |
+            mkdir -p python/results/pytest
+            set +e
+            pytest python/pytest/** \
+              --junitxml=python/results/pytest/pytest_test.xml \
+              -o junit_family=xunit1
+            echo "export PYTEST_EXIT_CODE=$?" >> "$BASH_ENV"
+            exit 0
+
+      - run:
+          name: Upload pytest results to Trunk
+          when: always
+          command: |
+            ./trunk-analytics-cli upload \
+              --junit-paths "python/results/pytest/pytest_test.xml" \
+              --org-url-slug "${TRUNK_ORG_SLUG}" \
+              --token "${TRUNK_TOKEN}" \
+              --variant "<< parameters.variant >>" \
+              --test_process_exit_code "${PYTEST_EXIT_CODE:-0}"
+
+      - run:
+          name: Run robotframework tests
+          when: always
+          command: |
+            mkdir -p python/results/robotframework
+            set +e
+            pabot --testlevelsplit \
+              --outputdir=python/results/robotframework \
+              --output=robot_test.xml \
+              python/robotframework/**
+            echo "export ROBOT_EXIT_CODE=$?" >> "$BASH_ENV"
+            exit 0
+
+      - run:
+          name: Upload robotframework results to Trunk
+          when: always
+          command: |
+            ./trunk-analytics-cli upload \
+              --junit-paths "python/results/robotframework/robot_test.xml" \
+              --org-url-slug "${TRUNK_ORG_SLUG}" \
+              --token "${TRUNK_TOKEN}" \
+              --variant "<< parameters.variant >>" \
+              --test_process_exit_code "${ROBOT_EXIT_CODE:-0}"
+
+      # Bonus: native CircleCI test results UI (free)
+      - store_test_results:
+          path: python/results
+
+      # Equivalent to actions/upload-artifact
+      - store_artifacts:
+          path: python/results
+          destination: python-junit-results-<< parameters.variant >>
+
+workflows:
+  test:
+    jobs:
+      - python_test:
+          matrix:
+            parameters:
+              variant: ["linux"]
+              cli_sku: ["trunk-analytics-cli-x86_64-unknown-linux.tar.gz"]
